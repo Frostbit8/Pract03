@@ -4,10 +4,12 @@ from typing import List
 
 class TablaSimbolos:
   l = []
-  simbolos=dict()
-  metodos=dict()
+
   def NuevoAmbito(self):
-    self.l.append(dict())
+    nuevoDict=dict()
+    self.l.append(nuevoDict)
+    return nuevoDict
+
   def SalirAmbito(self):
     self.l.pop()
   
@@ -56,7 +58,7 @@ class Arbol(object):
 class Formal(Nodo):
     nombre_variable: str
     tipo: str
-    def analiza():
+    def analiza(self,classTree,nuevo_ambito):
         self.cast = self.tipo
         return []
 
@@ -68,7 +70,6 @@ class Formal(Nodo):
         resultado += f'{(n+2)*" "}{self.tipo}\n'
         return resultado
 
-@dataclass
 class Expresion(Nodo):
     cast: str
 
@@ -79,24 +80,7 @@ class Expresion(Nodo):
 class Asignacion(Expresion):
     nombre: str
     cuerpo: Expresion
-    def analiza(self):
-       
-        Error = []
-        Error += self.cuerpo.analiza()
-       
-        if self.nombre in ambito:
-            if self.nombre == 'self':
-              self.cast = ambito["SELF_TYPE"]
-              Error += ["Cannot assign to 'self'."]
-              return Error
-            cast_nombre = ambito[self.nombre]
-            
-        else:
-            cast_nombre = 'Object'
-            Error += ["Error 25"]
-        
-        
-        return Error
+   
 
 
     def str(self, n):
@@ -106,6 +90,23 @@ class Asignacion(Expresion):
         resultado += self.cuerpo.str(n+2)
         resultado += f'{(n)*" "}: {self.cast}\n'
         return resultado
+
+    def analiza(self,ambito):
+        Error = []
+        Error += self.cuerpo.analiza()
+       
+        if self.nombre in ambito:
+            if self.nombre == 'self':
+              self.cast = ambito["SELF_TYPE"]
+              Error += ["Cannot assign to 'self'."]
+              return Error
+            
+        else:
+            cast_nombre = 'Object'
+            Error += ["Error 25"]
+        
+        
+        return Error
 
 
 @dataclass
@@ -238,7 +239,7 @@ class Swicht(Nodo):
 @dataclass
 class Nueva(Nodo):
     tipo: str
-    def analiza(self):
+    def analiza(self,classTree,nuevo_ambito):
       self.cast=self.tipo
       return ''   
     def str(self, n):
@@ -254,7 +255,7 @@ class Nueva(Nodo):
 class OperacionBinaria(Expresion):
     izquierda: Expresion
     derecha: Expresion
-    def analiza(self):
+    def analiza(self,classTree,nuevo_ambito):
       error=self.izquierda.analiza()
       error=error+self.derecha.analiza()
       if self.izquierda.cast=='INT' and self.derecha.cast=='INT':
@@ -266,7 +267,7 @@ class OperacionBinaria(Expresion):
 class OperacionBinariaBoolean(Expresion):
     izquierda: Expresion
     derecha: Expresion
-    def analiza(self):
+    def analiza(self,classTree,nuevo_ambito):
       if self.izquierda.cast=='BOOLEAN' and self.derecha.cast=='BOOLEAN':
         self.cast='BOOLEAN'
       else:
@@ -376,6 +377,11 @@ class Neg(OperacionBinariaBoolean):
         resultado += f'{(n)*" "}: {self.cast}\n'
         return resultado
 
+    def analiza(self,classTree,nuevo_ambito):
+        Error = []
+        Error += self.expr.analiza(classTree,nuevo_ambito)
+        self.cast = self.expr.cast
+        return Error
 
 
 @dataclass
@@ -389,6 +395,11 @@ class Not(OperacionBinariaBoolean):
         resultado += self.expr.str(n+2)
         resultado += f'{(n)*" "}: {self.cast}\n'
         return resultado
+    def analiza(self,classTree,nuevo_ambito):
+        Error = []
+        Error += self.expr.analiza(classTree,nuevo_ambito)
+        self.cast = "Bool"
+        return Error
 
 
 @dataclass
@@ -402,7 +413,11 @@ class EsNulo(OperacionBinariaBoolean):
         resultado += f'{(n)*" "}: {self.cast}\n'
         return resultado
 
-
+    def analiza(self,classTree,nuevo_ambito):
+        Error = []
+        Error += self.expr.analiza()
+        self.cast = self.expr.cast
+        return Error
 
 
 @dataclass
@@ -416,14 +431,16 @@ class Objeto(Expresion):
         resultado += f'{(n)*" "}: {self.cast}\n'
         return resultado
         
-    def analiza(self):
+    def analiza(self,classTree,nuevo_ambito):
         Error = []
-        if self.nombre in ambito:
-            self.cast = ambito[self.nombre]
-        else:
+        if self.nombre not in nuevo_ambito:
             self.cast = "Object"
             Error+=[f"Undeclared identifier {self.nombre}."]
-        return Error
+            return Error
+
+        self.cast = nuevo_ambito[self.nombre]
+        
+            
 
 
 
@@ -437,15 +454,18 @@ class NoExpr(Expresion):
         resultado += f'{(n)*" "}_no_expr\n'
         resultado += f'{(n)*" "}: {self.cast}\n'
         return resultado
+    def analiza(self,classTree,nuevo_ambito):
+        self.cast = "_no_type"
+        return []
 
 
 @dataclass
 class Entero(Expresion):
     valor: int
     
-    def analiza(self):
+    def analiza(self,classTree,nuevo_ambito):
       self.cast='Int'
-      return''
+      return []
     def str(self, n):
         resultado = super().str(n)
         resultado += f'{(n)*" "}_int\n'
@@ -457,7 +477,7 @@ class Entero(Expresion):
 @dataclass
 class String(Expresion):
     valor: str
-    def analiza(self):
+    def analiza(self,classTree,nuevo_ambito):
       self.cast='String'
       return []
     def str(self, n):
@@ -472,16 +492,14 @@ class String(Expresion):
 @dataclass
 class Booleano(Expresion):
     valor: bool
-    def analiza(self):
-      self.cast='bool'
-      return ''
+   
     def str(self, n):
         resultado = super().str(n)
         resultado += f'{(n)*" "}_bool\n'
         resultado += f'{(n+2)*" "}{1 if self.valor else 0}\n'
         resultado += f'{(n)*" "}: {self.cast}\n'
         return resultado
-    def analiza(self):
+    def analiza(self,classTree,nuevo_ambito):
         self.cast = "Bool"
         return []
 
@@ -499,6 +517,7 @@ class Programa(IterableNodo):
 
     def analizaPrograma(self):
       clases=[]
+      nuevo_ambito=ambito_programa.NuevoAmbito()
       for secuencia in self.secuencia:
             if secuencia.nombre == "Main":
                 main = True
@@ -534,10 +553,10 @@ class Programa(IterableNodo):
 
       for clase in self.secuencia:
             
-            Error+= clase.analiza(classTree)
+            Error+= clase.analiza(classTree,nuevo_ambito)
         
-      print(Error)
-        
+      
+      ambito_programa.SalirAmbito()   
       return Error
 
 @dataclass
@@ -565,11 +584,11 @@ class Clase(Nodo):
         resultado += '\n'
         resultado += f'{(n+2)*" "})\n'
         return resultado
-    def analiza(self,classTree):
+    def analiza(self,classTree,nuevo_ambito):
       Error = []
 
       global ambito_programa
-      ambito_programa.NuevoAmbito()
+      nuevo_ambito=ambito_programa.NuevoAmbito()
       if  classTree.buscarSubarbol(nodoArbol(self.padre)) == None:
             Error +=[f"Class {self.nombre} inherits from an undefined class {self.padre}."]
             return Error
@@ -582,7 +601,7 @@ class Clase(Nodo):
 
       #####
       for c in self.caracteristicas:
-        c.analiza()
+        c.analiza(classTree,nuevo_ambito)
         '''
         if type(c)==Atributo:
           ambito_programa.añade_simbolo(c.nombre, c.tipo, c.cuerpo)
@@ -606,25 +625,26 @@ class Metodo(Caracteristica):
         resultado += f'{(n+2)*" "}{self.tipo}\n'
         resultado += self.cuerpo.str(n+2)
         return resultado
-    def analiza(self):
+    def analiza(self,classTree,nuevo_ambito):
       global ambito_programa
       nuevo_ambito=ambito_programa.NuevoAmbito()
-      Definidos=[]
+      definidos=[]
       Error = []
       for formal in self.formales: 
-        if formal.nombre_variable in Definidos:
-                Error += [f"Formal parameter {e.nombre_variable} is multiply defined."]
+        if formal.nombre_variable in definidos:
+                Error += [f"Formal parameter {formal.nombre_variable} is multiply defined."]
         else:
-                aux.append(e.nombre_variable)
+                definidos.append(formal.nombre_variable)
         if formal.nombre_variable == "self":
                 Error += [f"'self' cannot be the name of a formal parameter."]
         if formal.tipo == "SELF_TYPE":
-                Error += [f"Formal parameter {e.nombre_variable} cannot have type SELF_TYPE."]
+                Error += [f"Formal parameter {formal.nombre_variable} cannot have type SELF_TYPE."]
         nuevo_ambito[formal.nombre_variable] = formal.tipo
-       Error += self.cuerpo.analiza()
+      Error += self.cuerpo.analiza(classTree,nuevo_ambito)
       ambito_programa.SalirAmbito()
-      return "" + error
+      return Error
 
+@dataclass
 class Atributo(Caracteristica):
 
     def str(self, n):
@@ -634,11 +654,11 @@ class Atributo(Caracteristica):
         resultado += f'{(n+2)*" "}{self.tipo}\n'
         resultado += self.cuerpo.str(n+2)
         return resultado
-    def analiza(self):
+    def analiza(self,classTree,nuevo_ambito):
         Error = []
         if self.nombre == "self":
             Error += ["'self' cannot be the name of an attribute."]
         
-        Error +=  self.cuerpo.analiza()
+        Error +=  self.cuerpo.analiza(classTree,nuevo_ambito)
  
         return Error

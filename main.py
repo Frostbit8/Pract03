@@ -15,7 +15,7 @@ FICHEROS = os.listdir(GRADING)
 TESTS = [fich for fich in FICHEROS
          if os.path.isfile(os.path.join(GRADING, fich))
          and fich.endswith(".test")]
-TESTS = ['missingclass.test'] 
+
 print(TESTS)
 class CoolParser(Parser):
 
@@ -298,19 +298,19 @@ class CoolParser(Parser):
     
     @_('OBJECTID')
     def expresion(self, p):
-        return Objeto(p.lineno,'' ,p[0])
+        return Objeto(p.lineno,p[0])
     
     @_('INT_CONST')
     def expresion(self, p):
-        return Entero(p.lineno,'' ,p[0])
+        return Entero(p.lineno,p[0])
     
     @_('STR_CONST')
     def expresion(self, p):
-        return String(p.lineno,'', p[0])
+        return String(p.lineno, p[0])
     
     @_('BOOL_CONST')
     def expresion(self, p):
-        return Booleano(p.lineno,'', p[0])
+        return Booleano(p.lineno, p[0])
 
     @_('expresion LE expresion')
     def expresion(self, p):
