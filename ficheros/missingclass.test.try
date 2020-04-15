@@ -1,0 +1,2 @@
+missingclass.test: Class A inherits from an undefined class D.
+Compilation halted due to lex and parse errors.

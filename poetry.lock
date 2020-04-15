@@ -1,0 +1,14 @@
+[[package]]
+category = "main"
+description = "SLY - Sly Lex Yacc"
+name = "sly"
+optional = false
+python-versions = "*"
+version = "0.4"
+
+[metadata]
+content-hash = "085bbbd1c7fefdd455b57f508e1907ef8a31acc9aea8e12fceef9745781f58cc"
+python-versions = "^3.7"
+
+[metadata.hashes]
+sly = ["e5f2266a231322cc17519fbc3a3ba1c6335fed5a9a55abe0e598a35aea0ac32a"]
