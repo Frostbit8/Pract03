@@ -458,8 +458,8 @@ class Entero(Expresion):
 class String(Expresion):
     valor: str
     def analiza(self):
-      self.cast='str'
-      return ''
+      self.cast='String'
+      return []
     def str(self, n):
         resultado = super().str(n)
         resultado += f'{(n)*" "}_string\n'
