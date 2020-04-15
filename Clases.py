@@ -481,6 +481,9 @@ class Booleano(Expresion):
         resultado += f'{(n+2)*" "}{1 if self.valor else 0}\n'
         resultado += f'{(n)*" "}: {self.cast}\n'
         return resultado
+    def analiza(self):
+        self.cast = "Bool"
+        return []
 
 @dataclass
 class IterableNodo(Nodo):
@@ -606,10 +609,10 @@ class Metodo(Caracteristica):
     def analiza(self):
       global ambito_programa
       nuevo_ambito=ambito_programa.NuevoAmbito()
-      definidos=[]
+      Definidos=[]
+      Error = []
       for formal in self.formales: 
-        ambito_programa.añade_simbolo(formal.nombre_variable, formal.tipo)
-        if formal.nombre_variable in definidos:
+        if formal.nombre_variable in Definidos:
                 Error += [f"Formal parameter {e.nombre_variable} is multiply defined."]
         else:
                 aux.append(e.nombre_variable)
@@ -618,7 +621,7 @@ class Metodo(Caracteristica):
         if formal.tipo == "SELF_TYPE":
                 Error += [f"Formal parameter {e.nombre_variable} cannot have type SELF_TYPE."]
         nuevo_ambito[formal.nombre_variable] = formal.tipo
-      error = self.cuerpo.analiza()
+       Error += self.cuerpo.analiza()
       ambito_programa.SalirAmbito()
       return "" + error
 
